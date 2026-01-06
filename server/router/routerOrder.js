@@ -14,11 +14,39 @@ const config = {
 
 router.post("/create-order", authorize("user"), async (req, res) => {
   try {
-    const { productid, items, price, shipping, gross_amount } = req.body;
+    const { products, gross_amount } = req.body;
 
     const user = req.user;
 
+    const productsData = products;
+
     const orderid = `ORDER-${nanoid(5)}-${nanoid(5)}`;
+
+    await client.query("BEGIN");
+
+    const rawData = await client.query(
+      `INSERT INTO 
+      orders(transaction_id, user_id, gross_amount)
+      VALUES($1, $2, $3) RETURNING *`,
+      [orderid, user.id, gross_amount]
+    );
+    const order = rawData.rows[0];
+
+    for (const product of productsData) {
+      await client.query(
+        `INSERT INTO order_items(order_id, product_id, quantity, price, shipping) 
+        VALUES($1, $2, $3, $4, $5)`,
+        [
+          order.id,
+          product.id,
+          product.quantity,
+          product.price,
+          product.shipping,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
 
     const data = {
       customer_details: {
@@ -36,22 +64,18 @@ router.post("/create-order", authorize("user"), async (req, res) => {
     };
 
     const response = await axios.post(
-      `${process.env.MID_BASE_URL}/snap/v1/transactions`,
-      data,
-      { headers: config }
-    );
-
-    await client.query(
-      `INSERT INTO 
-      orders(transaction_id, user_id, product_id, items, price, shipping, gross_amount)
-      VALUES($1, $2, $3, $4, $5, $6, $7)`,
-      [orderid, user.id, productid, items, price, shipping, gross_amount]
-    );
-
-    res.status(201).json(response.data);
-  } catch (error) {
-    console.log(error);
+  `${process.env.MID_BASE_URL}/snap/v1/transactions`,
+  data,
+  {
+    headers: config,
   }
+);
+
+res.status(201).json(response.data);
+  }  catch (error) {
+  await pool.query("ROLLBACK");
+  res.status(500).json({ message: error.message });
+}
 });
 
 const updateStatusOrder = async (status, orderid) => {
@@ -185,7 +209,7 @@ router.get("/get-orders", authorize("admin", "user"), async (req, res) => {
       INNER JOIN users ON orders.user_id = users.id
       INNER JOIN product ON orders.product_id = product.id
       INNER JOIN address ON users.id = address.user_id
-      ${level !== "admin" ? "WHERE orders.user_id = $1" : "" }`;
+      ${level !== "admin" ? "WHERE orders.user_id = $1" : ""}`;
 
     const data = await client.query(query, level !== "admin" ? [userid] : []);
 
