@@ -144,10 +144,12 @@ router.put("/give-resi/:id", authorize("admin"), async (req, res) => {
     const { resi } = req.body;
     const status = "shipping";
 
-    await client.query(`UPDATE orders SET resi = $1, status_order = $2 WHERE id = $3`, [resi, status, id]);
+    await client.query(
+      `UPDATE orders SET resi = $1, status_order = $2 WHERE id = $3`,
+      [resi, status, id]
+    );
 
     res.status(200).json({ message: "Berhasil diperbaharui" });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
@@ -159,10 +161,12 @@ router.put("/cancel/:id", authorize("admin"), async (req, res) => {
     const { id } = req.params;
     const status = "cancel";
 
-    await client.query(`UPDATE orders SET status_order = $1 WHERE id = $2`, [status, id]);
+    await client.query(`UPDATE orders SET status_order = $1 WHERE id = $2`, [
+      status,
+      id,
+    ]);
 
     res.status(200).json({ message: "Berhasil diperbaharui" });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
@@ -171,19 +175,91 @@ router.put("/cancel/:id", authorize("admin"), async (req, res) => {
 
 router.get("/get-orders", authorize("admin", "user"), async (req, res) => {
   try {
-    
-    const data = await client.query(`SELECT orders.*, users.*, product.*, address.*,
+    const level = req.user.level;
+    const userid = req.user.id;
+
+    const query = `SELECT orders.*, users.*, product.*, address.*,
       (orders.price::numeric - (orders.items * product.capital::numeric)) AS total_profit,
       users.name AS user_name, product.name AS product_name
       FROM orders
       INNER JOIN users ON orders.user_id = users.id
       INNER JOIN product ON orders.product_id = product.id
-      INNER JOIN address ON users.id = address.user_id`)
+      INNER JOIN address ON users.id = address.user_id
+      ${level !== "admin" ? "WHERE orders.user_id = $1" : "" }`;
 
-    res.status(200).json(data.rows);
+    const data = await client.query(query, level !== "admin" ? [userid] : []);
+
+    const rawData = data.rows;
+
+    let orders;
+    if (level === "admin") {
+      orders = rawData?.map((order) => ({
+        id: order.id,
+        transaction_id: order.transaction_id,
+        transaction_status: order.transaction_status,
+        status_order: order.status_order,
+        resi: order.resi,
+        user: {
+          user_id: 3,
+          name: order.user_name,
+          email: order.email,
+          phone: order.phone,
+        },
+        product: {
+          product_id: 8,
+          product: order.product_name,
+          items: order.items,
+          price: order.price * order.items,
+          capital: order.capital * order.items,
+          profit: Number(order.total_profit),
+        },
+        gross_amount: Number(order.gross_amount),
+        address: {
+          province: order.province,
+          city: order.city,
+          district: order.district,
+          village: order.village,
+          detail: order.detail,
+          shipping: Number(order.shipping),
+        },
+        createdat: order.createdat,
+      }));
+    } else {
+      orders = rawData?.map((order) => ({
+        id: order.id,
+        transaction_id: order.transaction_id,
+        transaction_status: order.transaction_status,
+        status_order: order.status_order,
+        resi: order.resi,
+        user: {
+          user_id: 3,
+          name: order.user_name,
+          email: order.email,
+          phone: order.phone,
+        },
+        product: {
+          product_id: 8,
+          product: order.product_name,
+          items: order.items,
+          price: order.price * order.items,
+        },
+        gross_amount: Number(order.gross_amount),
+        address: {
+          province: order.province,
+          city: order.city,
+          district: order.district,
+          village: order.village,
+          detail: order.detail,
+          shipping: Number(order.shipping),
+        },
+        createdat: order.createdat,
+      }));
+    }
+
+    res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-})
+});
 
 export default router;
