@@ -64,18 +64,18 @@ router.post("/create-order", authorize("user"), async (req, res) => {
     };
 
     const response = await axios.post(
-  `${process.env.MID_BASE_URL}/snap/v1/transactions`,
-  data,
-  {
-    headers: config,
-  }
-);
+      `${process.env.MID_BASE_URL}/snap/v1/transactions`,
+      data,
+      {
+        headers: config,
+      }
+    );
 
-res.status(201).json(response.data);
-  }  catch (error) {
-  await pool.query("ROLLBACK");
-  res.status(500).json({ message: error.message });
-}
+    res.status(201).json(response.data);
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    res.status(500).json({ message: error.message });
+  }
 });
 
 const updateStatusOrder = async (status, orderid) => {
@@ -202,83 +202,62 @@ router.get("/get-orders", authorize("admin", "user"), async (req, res) => {
     const level = req.user.level;
     const userid = req.user.id;
 
-    const query = `SELECT orders.*, users.*, product.*, address.*,
-      (orders.price::numeric - (orders.items * product.capital::numeric)) AS total_profit,
-      users.name AS user_name, product.name AS product_name
+    const query = `SELECT orders.*, users.*, address.*,
+      users.name AS user_name,
+      COALESCE(json_agg(DISTINCT jsonb_build_object(
+      'id', product.id,
+      'name', product.name,
+      'quantity', order_items.quantity,
+      'price', order_items.price,
+      'capital', order_items.quantity * product.capital,
+      'profit',(order_items.price - (order_items.quantity * product.capital)),
+      'shipping', order_items.shipping
+      )) FILTER (WHERE product.id IS NOT NULL), '[]') AS products
       FROM orders
       INNER JOIN users ON orders.user_id = users.id
-      INNER JOIN product ON orders.product_id = product.id
-      INNER JOIN address ON users.id = address.user_id
-      ${level !== "admin" ? "WHERE orders.user_id = $1" : ""}`;
+      INNER JOIN order_items ON orders.id = order_items.order_id
+      INNER JOIN product ON order_items.product_id = product.id
+      INNER JOIN address ON users.id = address.user_id  
+      ${level !== "admin" ? "WHERE orders.user_id = $1" : ""}
+      GROUP BY orders.id, users.id, address.id`;
 
     const data = await client.query(query, level !== "admin" ? [userid] : []);
 
     const rawData = data.rows;
 
     let orders;
-    if (level === "admin") {
-      orders = rawData?.map((order) => ({
-        id: order.id,
-        transaction_id: order.transaction_id,
-        transaction_status: order.transaction_status,
-        status_order: order.status_order,
-        resi: order.resi,
-        user: {
-          user_id: 3,
-          name: order.user_name,
-          email: order.email,
-          phone: order.phone,
-        },
-        product: {
-          product_id: 8,
-          product: order.product_name,
-          items: order.items,
-          price: order.price * order.items,
-          capital: order.capital * order.items,
-          profit: Number(order.total_profit),
-        },
-        gross_amount: Number(order.gross_amount),
-        address: {
-          province: order.province,
-          city: order.city,
-          district: order.district,
-          village: order.village,
-          detail: order.detail,
-          shipping: Number(order.shipping),
-        },
-        createdat: order.createdat,
-      }));
-    } else {
-      orders = rawData?.map((order) => ({
-        id: order.id,
-        transaction_id: order.transaction_id,
-        transaction_status: order.transaction_status,
-        status_order: order.status_order,
-        resi: order.resi,
-        user: {
-          user_id: 3,
-          name: order.user_name,
-          email: order.email,
-          phone: order.phone,
-        },
-        product: {
-          product_id: 8,
-          product: order.product_name,
-          items: order.items,
-          price: order.price * order.items,
-        },
-        gross_amount: Number(order.gross_amount),
-        address: {
-          province: order.province,
-          city: order.city,
-          district: order.district,
-          village: order.village,
-          detail: order.detail,
-          shipping: Number(order.shipping),
-        },
-        createdat: order.createdat,
-      }));
-    }
+    orders = rawData?.map((order) => ({
+      id: order.id,
+      transaction_id: order.transaction_id,
+      transaction_status: order.transaction_status,
+      status_order: order.status_order,
+      resi: order.resi,
+      user: {
+        user_id: 3,
+        name: order.user_name,
+        email: order.email,
+        phone: order.phone,
+      },
+      product: order.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        quantity: product.quantity,
+        shipping: product.shipping,
+        price: product.price,
+        capital: level !== "admin" ? null : product.capital,
+        profit: level !== "admin" ? null : product.profit,
+      })),
+      gross_amount: Number(order.gross_amount),
+      address: {
+        province: order.province,
+        city: order.city,
+        district: order.district,
+        village: order.village,
+        detail: order.detail,
+        shipping: Number(order.shipping),
+      },
+      createdat: order.createdat,
+    }));
 
     res.status(200).json(orders);
   } catch (error) {
