@@ -5,21 +5,13 @@ import Category from "./Category";
 import Filters from "./Filters";
 import Product from "./Product";
 import Footer from "../components/footer/Footer";
+import { useGetProductsQuery } from "../api/request/ApiProduct";
 
 const Index = () => {
-  const [isSmall, setSmall] = useState(window.innerWidth > 768);
+  const {data, isLoading} = useGetProductsQuery()
 
-  useEffect(() => {
-    const handleResize = () => {
-      setSmall(window.innerWidth > 768);
-    };
 
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  console.log(data)
   return (
     <div className="bg-light">
       <Navbar />

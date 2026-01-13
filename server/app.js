@@ -17,6 +17,7 @@ import routerUser from "./router/routerUser.js";
 import routerAddress from "./router/routerAddress.js";
 import routerReview from "./router/routerReview.js";
 import routerOrder from "./router/routerOrder.js";
+import routerCart from "./router/routerCart.js";
 
 app.use(
   cors({
@@ -44,5 +45,6 @@ app.use("/product", routerProduct);
 app.use("/address", routerAddress);
 app.use("/review", routerReview);
 app.use("/order", routerOrder);
+app.use("/cart", routerCart);
 
 export default app;

@@ -51,27 +51,27 @@ export const products = [
       {
         id: 14,
         product_id: 8,
-        link: "http://localhost:1001/assets/img-2-85520f61-23a1-4c26-bba2-4cc2402c1950.jpg",
+        link: "http://localhost:1111/assets/img-2-85520f61-23a1-4c26-bba2-4cc2402c1950.jpg",
       },
       {
         id: 15,
         product_id: 8,
-        link: "http://localhost:1001/assets/img-3-8c9f844a-0040-49ca-a9aa-e030444b0c19.png",
+        link: "http://localhost:1111/assets/img-3-8c9f844a-0040-49ca-a9aa-e030444b0c19.png",
       },
       {
         id: 16,
         product_id: 8,
-        link: "http://localhost:1001/assets/img-4-eb458466-e743-44d6-9308-86168eee9fc3.png",
+        link: "http://localhost:1111/assets/img-4-eb458466-e743-44d6-9308-86168eee9fc3.png",
       },
       {
         id: 17,
         product_id: 8,
-        link: "http://localhost:1001/assets/img-5-f8c0d717-7667-4c98-b34d-02aa6e3b34ae.png",
+        link: "http://localhost:1111/assets/img-5-f8c0d717-7667-4c98-b34d-02aa6e3b34ae.png",
       },
       {
         id: 18,
         product_id: 8,
-        link: "http://localhost:1001/assets/img-6-57bd44ed-9d37-43ee-93e3-624d5da6ec1c.png",
+        link: "http://localhost:1111/assets/img-6-57bd44ed-9d37-43ee-93e3-624d5da6ec1c.png",
       },
     ],
     reviews: [

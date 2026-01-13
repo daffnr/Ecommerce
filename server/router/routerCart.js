@@ -40,7 +40,6 @@ router.get("/", authorize("user"), async (req, res) => {
   }
 });
 
-
 router.post("/", authorize("user"), async (req, res) => {
   try {
     const userId = req.user.id;
@@ -106,7 +105,6 @@ router.post("/", authorize("user"), async (req, res) => {
   }
 });
 
-
 router.put("/:id", authorize("user"), async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -136,3 +134,4 @@ router.delete("/:id", authorize("user"), async (req, res) => {
   }
 });
 
+export default router;
