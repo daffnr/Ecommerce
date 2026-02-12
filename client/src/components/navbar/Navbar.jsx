@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const Navbar = () => {
+const Navbar = ({setSearch}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSmall, setSmall] = useState(window.innerWidth > 768);
   const isUser = false;
   const home = location.pathname;
+
+  const [value, setValue] = useState("")
+
+  const handleSearch = (e) => {
+    const newValue = e.target.value
+    setValue(newValue)
+
+    if(setSearch){
+      setSearch(newValue);
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -50,6 +61,8 @@ const Navbar = () => {
                 type="text"
                 placeholder="Cari apa aja..."
                 className="form-control"
+                value={value || ""}
+                onChange={handleSearch}
               />
             </div>
           )}

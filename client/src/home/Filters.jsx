@@ -1,6 +1,14 @@
-import React from "react";
+import React, {useState} from "react";
 
-const Filters = () => {
+const Filters = ({setLimit}) => {
+
+  const [value, setValue] = useState("")
+
+  const handleLimit = (e) => {
+    const newLimit = parseInt(e.target.value)
+    setLimit(newLimit)
+    setValue(newLimit)
+  }
   return (
     <div className="d-flex gap-4">
       <select name="price" id="sort" className="form-select pointer">
@@ -13,13 +21,15 @@ const Filters = () => {
         <option value="lowest">Terlaris</option>
       </select>
 
-      <select name="price" id="sort" className="form-select pointer">
+      <select name="price" id="sort" className="form-select pointer" value={value || ""}onChange={handleLimit}>
         <option value="" hidden>
           --Tampilkan Produk--
         </option>
-        <option value="lowest">10</option>
-        <option value="lowest">30</option>
-        <option value="lowest">50</option>
+        <option value="14">14</option>
+        <option value="28">28</option>
+        <option value="42">42</option>
+        <option value="64">64</option>
+        <option value="128">128</option>
       </select>
     </div>
   );

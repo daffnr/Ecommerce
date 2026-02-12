@@ -29,12 +29,12 @@ router.post("/add-category", authorize("admin"),  async (req, res) => {
   }
 });
 
-router.get("/get-all", async (req, res) => {
+router.get("/get-categories", async (req, res) => {
     
   try {
     const data = await client.query(`SELECT * FROM category`);
 
-    res.status(200).json(data);
+    res.status(200).json(data.rows);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
