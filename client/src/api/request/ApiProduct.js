@@ -16,7 +16,13 @@ export const ApiProduct = createApi({
       }),
       providesTags: ["products"],
     }),
+    getProduct: builder.query({
+      query: (id) => ({
+        url:`/${id}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
-export const { useGetProductsQuery } = ApiProduct;
+export const { useGetProductsQuery, useGetProductQuery } = ApiProduct;

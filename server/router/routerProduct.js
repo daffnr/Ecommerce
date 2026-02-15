@@ -103,28 +103,61 @@ router.get("/get-products", async (req, res) => {
         LEFT JOIN users ON review.user_id = users.id
         WHERE product.name ILIKE $1`;
 
-let countQuery = `SELECT COUNT(*) AS total FROM product WHERE name ILIKE $1`
-let queryParams = [`%${search}%`]
+    let countQuery = `SELECT COUNT(*) AS total FROM product WHERE name ILIKE $1`;
+    let queryParams = [`%${search}%`];
 
-if(categoryId){
-  query += ` AND product.category_id = $2`
-  countQuery += ` AND Category_id = $2`
-  queryParams.push(categoryId)
-}
+    if (categoryId) {
+      query += ` AND product.category_id = $2`;
+      countQuery += ` AND Category_id = $2`;
+      queryParams.push(categoryId);
+    }
 
-query += ` GROUP BY product.id ORDER BY product.id ASC LIMIT $${queryParams.length + 1}
-      OFFSET $${queryParams.length + 2}`
-      queryParams.push(limit, offset)
+    query += ` GROUP BY product.id ORDER BY product.id ASC LIMIT $${queryParams.length + 1}
+      OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
 
     const data = await client.query(query, queryParams);
-    const countData = await client.query(countQuery, queryParams.slice(0, queryParams.length -2))
+    const countData = await client.query(
+      countQuery,
+      queryParams.slice(0, queryParams.length - 2),
+    );
 
-    const totalProducts = parseInt(countData.rows[0].total)
-    const totalPages = Math.ceil(totalProducts / limit)
+    const totalProducts = parseInt(countData.rows[0].total);
+    const totalPages = Math.ceil(totalProducts / limit);
 
     const products = data.rows;
 
-    res.status(200).json({page, limit, totalProducts, totalPages, products});
+    res.status(200).json({ page, limit, totalProducts, totalPages, products });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const data = await client.query(
+      `
+    SELECT product.*,
+        ROUND(AVG(review.rating), 1) AS rating,
+        COALESCE (json_agg(DISTINCT jsonb_build_object('id', image.id, 'product_id', image.product_id, 'link', image.link))
+        FILTER (WHERE image.id is NOT NULL), '[]') AS images,
+        COALESCE(json_agg(json_build_object( 'user', users.name, 'rating', review.rating, 'comment', review.comment))
+        FILTER (WHERE review.id is NOT NULL), '[]') AS reviews
+        FROM product
+        LEFT JOIN image ON product.id = image.product_id
+        LEFT JOIN review ON product.id = review.product_id
+        LEFT JOIN users ON review.user_id = users.id
+        WHERE product.id = $1 GROUP BY product.id`,
+      [req.params.id],
+    );
+
+    if(data.rowCount === 0){
+      return res.status(404).json({message: "Data tidak ditemukan"});
+    }
+    const product = data.rows[0]
+
+    res.status(200).json(product);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });

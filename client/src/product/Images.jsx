@@ -1,7 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const Images = ({ product }) => {
-  const [img, setImg] = useState(product.images[0].link);
+  
+  const [img, setImg] = useState("");
+
+  useEffect(() => {
+    if(product.images && product.images?.length > 0){
+      setImg(product.images[0].link);
+    } else {
+      setImg("/image/logo.png");
+    }
+  }, [product]);
   return (
     <div className="rounded p-2 bg-white border border-2 shadow w-100">
       <div className="overflow-hidden rounded" style={{ height: 240 }}>
