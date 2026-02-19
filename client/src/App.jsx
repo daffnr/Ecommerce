@@ -1,6 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { ToastContainer } from "react-toastify";
 
 import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -24,6 +25,7 @@ const AdminReport = lazy(() => import("./admin/Report/AdminReport"));
 function App() {
   return (
     <BrowserRouter>
+      <ToastContainer position="bottom-right" theme="colored" />
       <Suspense fallback={<p>Loading...</p>}>
         <Routes>
           <Route path="/signin" element={<Signin />} />

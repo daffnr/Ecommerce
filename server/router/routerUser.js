@@ -62,7 +62,7 @@ router.post("/signin", async (req, res) => {
       );
 
       res.cookie("token", token, { httpOnly: true });
-      res.status(200).json({ message: "Berhasil Login" });
+      res.status(200).json({ message: "Berhasil Login", user});
     });
   } catch (error) {
     console.log(error);
