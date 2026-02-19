@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 const Counter = ({ product }) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
-  const [price, setPrice] = useState(product.price);
+  const [price, setPrice] = useState(0);
 
   const increaseQuantity = () => {
     if (quantity < product.stock) {
@@ -40,6 +40,10 @@ const Counter = ({ product }) => {
   useEffect(() => {
     setPrice(quantity * product.price);
   }, [quantity]);
+
+  useEffect(() => {
+    if(product){setPrice(product.price)}
+  }, [product])
 
   return (
     <div className="rounded p-2 bg-white border border-2 shadow w-100 d-flex flex-column gap-2">

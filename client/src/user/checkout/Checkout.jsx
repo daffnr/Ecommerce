@@ -97,7 +97,7 @@ const Summary = ({ checkoutProduct }) => (
     <p>
       Total: Rp{" "}
       {checkoutProduct
-        .reduce((acc, product) => acc + product.subtotal, 0)
+        .reduce((acc, product) => acc + Number(product.subtotal), 0)
         .toLocaleString("id-ID")}
     </p>
     <button className="btn btn-primary w-100">Bayar Sekarang</button>
