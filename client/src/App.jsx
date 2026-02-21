@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./home/Index";
 import Signin from "./components/auth/Signin";
 import Signup from "./components/auth/Signup";
+import { useDispatch } from "react-redux";
+import { useLoadUserMutation } from "./api/request/ApiAuth";
 
 const Detail = lazy(() => import("./product/Detail"));
 const Checkout = lazy(() => import("./user/checkout/Checkout"));
@@ -23,6 +25,22 @@ const AdminOrder = lazy(() => import("./admin/order/AdminOrder"));
 const AdminReport = lazy(() => import("./admin/Report/AdminReport"));
 
 function App() {
+  const dispatch = useDispatch();
+  const [loadUser] = useLoadUserMutation();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await loadUser().unwrap();
+        dispatch(setLogin(response));
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchUser();
+  }, [dispatch, loadUser]);
+
   return (
     <BrowserRouter>
       <ToastContainer position="bottom-right" theme="colored" />

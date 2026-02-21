@@ -7,6 +7,7 @@ import { ApiAuth } from "./request/ApiAuth";
 const store = configureStore({
   reducer: {
     auth: AuthSlice,
+    [ApiAuth.reducerPath]: ApiAuth.reducer,
     [ApiProduct.reducerPath]: ApiProduct.reducer,
     [ApiCategory.reducerPath]: ApiCategory.reducer,
   },
