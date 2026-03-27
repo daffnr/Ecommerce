@@ -85,7 +85,21 @@ router.get("/get-user", authorize("admin"), async (req, res) => {
 router.get("/load-user", authorize("user", "admin"), async (req, res) => {
   try {
     const data = await client.query(
-      `SELECT users.id, users.level, users.name, users.email, users.phone FROM users WHERE id = $1`,
+      `SELECT users.id, users.level, users.name, users.email, users.phone, users.id,
+      json_build_object(
+      'province_id', address.province_id,
+      'province', address.province,
+      'city_id', address.city_id,
+      'city', address.city,
+      'district_id', address.district_id,
+      'district', address.district,
+      'village_id', address.village_id,
+      'village', address.village,
+      'detail', address.detail
+      ) AS address
+      FROM users
+      LEFT join address ON users.id = address.user_id 
+      WHERE users.id = $1`,
       [req.user.id],
     );
 

@@ -95,7 +95,7 @@ router.get("/get-products", async (req, res) => {
       SELECT product.*,
         ROUND(AVG(review.rating), 1) AS rating,
         json_agg(json_build_object('id', image.id, 'product_id', image.product_id, 'link', image.link)) AS images,
-        COALESCE(json_agg(json_build_object( 'user', users.name, 'rating', review.rating, 'comment', review.comment))
+        COALESCE(json_agg(DISTINCT jsonb_build_object( 'user', users.name, 'rating', review.rating, 'comment', review.comment))
         FILTER (WHERE review.id is NOT NULL), '[]') AS reviews
         FROM product
         LEFT JOIN image ON product.id = image.product_id

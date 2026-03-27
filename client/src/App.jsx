@@ -10,6 +10,7 @@ import Signin from "./components/auth/Signin";
 import Signup from "./components/auth/Signup";
 import { useDispatch } from "react-redux";
 import { useLoadUserMutation } from "./api/request/ApiAuth";
+import { setLogin } from "./api/slice/AuthSlice";
 
 const Detail = lazy(() => import("./product/Detail"));
 const Checkout = lazy(() => import("./user/checkout/Checkout"));
