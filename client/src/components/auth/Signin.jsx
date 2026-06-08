@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useSigninMutation } from "../../api/request/ApiAuth";
 import { setLogin } from "../../api/slice/AuthSlice";
 import { toast } from "react-toastify";
+import { useEffect } from "react";
 
 const Signin = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [signin, { isLoading, error }] = useSigninMutation();
+  const {user} = useSelector(state => state.auth)
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,13 +25,26 @@ const Signin = () => {
       const response = await signin(data).unwrap();
       dispatch(setLogin(response.user));
 
-      navigate("/user-dashboard");
-      
+      if (response.user.level == "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/user-dashboard");
+      }
     } catch (error) {
       console.log(error);
       toast.error(error.data.message);
     }
   };
+
+  useEffect(() => {
+    if(user.id){
+      if (user.level == "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/user-dashboard");
+      }
+    }
+  }, [user])
 
   return (
     <div className="bg-info d-flex align-items-center justify-content-center min-vh-100">

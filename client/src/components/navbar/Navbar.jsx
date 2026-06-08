@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const Navbar = ({setSearch}) => {
+const Navbar = ({ setSearch }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSmall, setSmall] = useState(window.innerWidth > 768);
-  const isUser = false;
+  const { user } = useSelector((state) => state.auth);
+  const isUser = user.id;
   const home = location.pathname;
 
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState("");
 
   const handleSearch = (e) => {
-    const newValue = e.target.value
-    setValue(newValue)
+    const newValue = e.target.value;
+    setValue(newValue);
 
-    if(setSearch){
+    if (setSearch) {
       setSearch(newValue);
     }
-  }
+  };
 
   useEffect(() => {
     const handleResize = () => {

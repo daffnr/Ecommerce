@@ -61,7 +61,7 @@ router.post("/signin", async (req, res) => {
         { expiresIn: "7d" },
       );
 
-      res.cookie("token", token, { httpOnly: true });
+      res.cookie("token", token, { httpOnly: true, secure: process.env.ENV == "production", maxAge: 7 * 24 * 60 * 60 *1000  });
       res.status(200).json({ message: "Berhasil Login", user });
     });
   } catch (error) {
@@ -87,6 +87,7 @@ router.get("/load-user", authorize("user", "admin"), async (req, res) => {
     const data = await client.query(
       `SELECT users.id, users.level, users.name, users.email, users.phone, users.id,
       json_build_object(
+      'id', address.id,
       'province_id', address.province_id,
       'province', address.province,
       'city_id', address.city_id,
@@ -128,6 +129,49 @@ router.delete("/delete-user/:id", authorize("admin"), async (req, res) => {
     res
       .status(200)
       .json({ message: "User berhasil dihapus", deletedUser: data.rows[0] });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put("/update-profile", authorize("user"), async (req, res) => {
+  try {
+    const { name, email, phone, oldPassword, newPassword } = req.body;
+
+    await client.query(
+      `UPDATE users SET name = $1, email = $2, phone = $3 WHERE id = $4`,
+      [name, email, phone, req.user.id],
+    );
+
+    if (oldPassword && newPassword) {
+      const result = await client.query(
+        `SELECT password from users WHERE id = $1`,
+        [req.user.id],
+      );
+
+      if (result.rowCount == 0) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+
+      const user = result.rows[0];
+
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+      if (!isMatch) {
+        return res.status(404).json({ message: "Password lama tidak sesuai" });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+      await client.query(`UPDATE users SET password = $1 WHERE id = $2`, [
+        hashedPassword,
+        req.user.id,
+      ]);
+    }
+
+    res.status(200).json({ message: "Berhasil diperbaharui" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });
