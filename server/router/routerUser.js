@@ -61,7 +61,11 @@ router.post("/signin", async (req, res) => {
         { expiresIn: "7d" },
       );
 
-      res.cookie("token", token, { httpOnly: true, secure: process.env.ENV == "production", maxAge: 7 * 24 * 60 * 60 *1000  });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.ENV == "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       res.status(200).json({ message: "Berhasil Login", user });
     });
   } catch (error) {
@@ -72,10 +76,27 @@ router.post("/signin", async (req, res) => {
 
 router.get("/get-user", authorize("admin"), async (req, res) => {
   try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    console.log(req.query)
+
     const data = await client.query(
-      `SELECT id, name, email, phone, level FROM users`,
+      `SELECT * FROM users WHERE level = 'user' 
+        AND (name ILIKE $1 OR email ILIKE $1)
+        ORDER BY createdat ASC LIMIT $2 OFFSET $3`,
+      [`%${search}%`, limit, offset]
     );
-    res.status(200).json(data.rows);
+
+    const countData = await client.query(
+      `SELECT count(*) AS total FROM users WHERE level = 'user' AND name ILIKE $1`,
+      [`%${search}%`]
+    );
+
+    const totalUsers = parseInt(countData.rows[0].total)
+    const totalPages = Math.ceil(totalUsers / limit);
+    const users = data.rows;
+
+    res.status(200).json({totalUsers, totalPages, users});
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });

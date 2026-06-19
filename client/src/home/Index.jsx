@@ -14,13 +14,21 @@ const Index = () => {
   const [limit, setLimit] = useState(14);
   const [categoryId, setCategoryId] = useState("");
 
+  const searchCat = "";
+  const pageCat = "";
+  const limitCat = "";
+
   const { data: rawData = {}, isLoading: loadProduct } = useGetProductsQuery({
     search,
     page,
     limit,
     categoryId,
   });
-  const { data: categories, isLoading: loadCategory } = useGetCategoriesQuery();
+  const { data: categories, isLoading: loadCategory } = useGetCategoriesQuery({
+    search: searchCat,
+    page: pageCat,
+    limit: limitCat,
+  });
 
   const { products = [], totalPages, totalProducts } = rawData;
 
@@ -38,12 +46,14 @@ const Index = () => {
         style={{ paddingTop: 80, minHeight: "100vh" }}
       >
         <div className="container overflow-auto d-flex gap-3 p-1">
-          <button className="btn btn-secondary" onClick={handleReset}>Reset</button>
+          <button className="btn btn-secondary" onClick={handleReset}>
+            Reset
+          </button>
           {categories?.map((category, index) => (
             <Category
               key={index}
               name={category.name}
-              icon={category.icon}
+              icon={category.image}
               id={category.id}
               setCategory={(e) => setCategoryId(e)}
             />

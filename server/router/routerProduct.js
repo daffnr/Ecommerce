@@ -127,7 +127,7 @@ router.get("/get-products", async (req, res) => {
 
     const products = data.rows;
 
-    res.status(200).json({ page, limit, totalProducts, totalPages, products });
+    res.status(200).json({ totalProducts, totalPages, products });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: error.message });

@@ -14,7 +14,14 @@ export const ApiUser = createApi({
         body,
       }),
     }),
+    getUsers: builder.query({
+      query: ({search, page, limit}) => ({
+        url: "/get-user",
+        method: "GET",
+        params: {search, page, limit}
+      })
+    })
   }),
 });
 
-export const { useUpdateProfileMutation } = ApiUser;
+export const { useUpdateProfileMutation, useGetUsersQuery } = ApiUser;

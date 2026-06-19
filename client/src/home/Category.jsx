@@ -9,7 +9,7 @@ const Category = ({ name, icon, id, setCategory }) => {
       className="d-flex gap-2 p-2 rounded bg-white border pointer"
       onClick={() => handleCatgeory(id)}
     >
-      <div>{icon}</div>
+      <img src={icon} alt={name} className="circle"/>
       <p className="m-0">{name}</p>
     </div>
   );
