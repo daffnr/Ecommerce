@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { useGetShippingCostMutation } from "../../api/request/ApiAddress";
+import { useCreateOrderMutation } from "../../api/request/ApiOrder";
+import {toast} from "react-toastify"
 
 const Header = () => {
   const navigate = useNavigate();
@@ -34,7 +38,17 @@ const AddressSection = () => (
   </div>
 );
 
-const ProductItem = ({ product, updateQuantity }) => (
+const ProductItem = ({
+  product,
+  updateQuantity,
+  courier,
+  setCourier,
+  isLoading,
+  services,
+  service,
+  setService,
+  error,
+}) => (
   <div className="row align-items-center">
     <div className="col-lg-3 col-6 mb-2">
       <div className="overflow-hidden" style={{ height: 80, width: 80 }}>
@@ -47,7 +61,7 @@ const ProductItem = ({ product, updateQuantity }) => (
         product.totalWeight || product.weight
       } gram`}</p>
       <p className="h6">{`Rp ${parseFloat(product.subtotal).toLocaleString(
-        "id-ID"
+        "id-ID",
       )}`}</p>
     </div>
     <div className="col-lg-3 col-6">
@@ -70,42 +84,168 @@ const ProductItem = ({ product, updateQuantity }) => (
       </div>
     </div>
     <div className="col-lg-12 col-6 mt-2">
-      <select name="shipping" id="shipping" className="form-select">
-        <option value="jne">JNE</option>
-        <option value="tiki">TIKI</option>
-        <option value="j&t">J&T</option>
-      </select>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <select
+          name="shipping"
+          id="shipping"
+          className="form-select"
+          value={courier}
+          onChange={(e) => setCourier(e.target.value)}
+        >
+          <option value="" hidden>
+            Pilih Pengiriman
+          </option>
+          <option value="jne">JNE</option>
+          <option value="tiki">TIKI</option>
+          <option value="jnt">J&T</option>
+        </select>
+      )}
+
+      {error ? (
+        <p className="text-danger m-2 mt-2">Layanan Tidak Tersedia</p>
+      ) : service == null ? (
+        <p className="text-danger m-2 mt-2">Layanan Tidak Tersedia</p>
+      ) : services?.length > 0 ? (
+        <select
+          name="shipping"
+          id="shipping"
+          className="form-select mt-2"
+          value={service}
+          onChange={(e) => setService(e.target.value)}
+        >
+          <option value="" hidden>
+            Pilih Ongkir
+          </option>
+          {services?.map((item, i) => (
+            <option
+              key={i}
+              value={item.cost}
+            >{`Rp ${parseFloat(item.cost).toLocaleString("id-ID")} - ${item.etd} - ${item.description}`}</option>
+          ))}
+        </select>
+      ) : null}
     </div>
   </div>
 );
 
-const ProductList = ({ checkoutProduct, updateQuantity }) => (
+const ProductList = ({
+  checkoutProduct,
+  updateQuantity,
+  courier,
+  setCourier,
+  isLoading,
+  services,
+  service,
+  setService,
+  error,
+}) => (
   <div className="rounded border shadow bg-white p-2 mb-3 d-flex flex-column gap-2">
     {checkoutProduct.map((product) => (
       <ProductItem
         key={product.id}
         product={product}
         updateQuantity={updateQuantity}
+        courier={courier}
+        setCourier={setCourier}
+        isLoading={isLoading}
+        services={services}
+        service={service}
+        setService={setService}
+        error={error}
       />
     ))}
   </div>
 );
 
-const Summary = ({ checkoutProduct }) => (
+const Summary = ({ checkoutProduct, service, proceed, loading }) => (
   <div className="rounded border shadow p-3 bg-white">
     <p className="h5">Ringkasan Belanja</p>
-    <p>
-      Total: Rp{" "}
-      {checkoutProduct
-        .reduce((acc, product) => acc + Number(product.subtotal), 0)
-        .toLocaleString("id-ID")}
-    </p>
-    <button className="btn btn-primary w-100">Bayar Sekarang</button>
+    <table className="table">
+      <tbody>
+        <tr>
+          <td>SubTotal</td>
+          <td>:</td>
+          <td>{`Rp${checkoutProduct
+            .reduce((acc, product) => acc + Number(product.subtotal), 0)
+            .toLocaleString("id-ID")}`}</td>
+        </tr>
+        <tr>
+          <td>Ongkir</td>
+          <td>:</td>
+          <td>{`Rp ${parseFloat(service ? service : 0).toLocaleString("id-ID")}`}</td>
+        </tr>
+        <tr>
+          <td>Total</td>
+          <td>:</td>
+          <td>{`Rp ${parseFloat(
+            checkoutProduct.reduce(
+              (acc, product) => acc + Number(product.subtotal),
+              0,
+            ) + Number(service),
+          ).toLocaleString("id-ID")}`}</td>
+        </tr>
+      </tbody>
+    </table>
+    <button className="btn btn-primary w-100" onClick={proceed} disabled={loading}>Bayar Sekarang</button>
   </div>
 );
 
 const Checkout = () => {
+  const navigate = useNavigate();
+  const { isSignin, user } = useSelector((state) => state.auth);
   const [checkoutProduct, setCheckoutProduct] = useState([]);
+  const [courier, setCourier] = useState("");
+  const [service, setService] = useState("");
+  const [getShippingCost, { data, isLoading, error: shippingError }] =
+    useGetShippingCostMutation();
+
+  const [createOrder, {data: token, isLoading: tokenLoad, error, isSuccess, reset}] = useCreateOrderMutation()
+
+  const paymentProceed = () => {
+    const data = {products: checkoutProduct, gross_amount:checkoutProduct.reduce(
+              (acc, product) => acc + Number(product.subtotal),
+              0,
+            ) + Number(service),
+            shipping: service,
+          };
+
+          createOrder(data)
+  };
+
+  useEffect(() => {
+    if(isSuccess){
+    console.log(token)
+    window.location.href = token.redirect_url
+    }
+    if (error){
+      toast.error(error?.data?.message || error?.message || "Terjadi kesalahan")
+    }
+  }, [token, isSuccess, error])
+
+  useEffect(() => {
+    const totalWeight = checkoutProduct?.reduce(
+      (sum, product) => sum + (product.totalWeight || product.weight),
+      0,
+    );
+
+    if (courier && user?.address?.data_id) {
+      getShippingCost({
+        courier,
+        weight: totalWeight,
+        destination: user?.address?.data_id,
+      });
+    }
+  }, [courier, checkoutProduct, user, getShippingCost]);
+
+  console.log(service);
+
+  useEffect(() => {
+    if (!isSignin) {
+      navigate("/");
+    }
+  }, [isSignin]);
 
   useEffect(() => {
     const storedProduct = sessionStorage.getItem("checkout_product");
@@ -129,7 +269,7 @@ const Checkout = () => {
           };
         }
         return product;
-      })
+      }),
     );
   };
 
@@ -145,11 +285,18 @@ const Checkout = () => {
               <ProductList
                 checkoutProduct={checkoutProduct}
                 updateQuantity={updateQuantity}
+                courier={courier}
+                setCourier={setCourier}
+                isLoading={isLoading}
+                services={data && data}
+                service={service}
+                setService={setService}
+                error={shippingError}
               />
             </div>
           </div>
           <div className="col-lg-4 col-12">
-            <Summary checkoutProduct={checkoutProduct} />
+            <Summary checkoutProduct={checkoutProduct} service={service} proceed={paymentProceed} loading={tokenLoad} />
           </div>
         </div>
       </div>

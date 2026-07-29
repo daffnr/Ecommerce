@@ -1,55 +1,51 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import {
-  useGetProvincesQuery,
-  useGetCitiesQuery,
-  useGetDistrictsQuery,
-  useGetVillagesQuery,
+  useGetCitiesMutation,
   useAddAddressMutation,
 } from "../../api/request/ApiAddress";
 import { toast } from "react-toastify";
 import { useLoadUserMutation } from "../../api/request/ApiAuth";
 
 const Address = ({ user }) => {
+  const [city, setCity] = useState("");
+  const [search, setSearch] = useState("");
+  const [result, setResult] = useState([]);
+  const [selectedCity, setSelectedCity] = useState(null);
+
+  const filteredResult = result?.filter((item) =>
+    item.subdistrict_name.toLowerCase().includes(search.toLowerCase()),
+  );
+
   const [formData, setFormData] = useState({
     id: "",
-    province_id: "",
-    province: "",
-    city_id: "",
-    city: "",
-    district: "",
-    village_id: "",
-    village: "",
+    data_id: "",
+    label: "",
+    province_name: "",
+    city_name: "",
+    district_name: "",
+    subdistrict_name: "",
+    zip_code: "",
     detail: "",
   });
 
-  const { data: provinces } = useGetProvincesQuery();
-
-  const { data: cities } = useGetCitiesQuery(formData.province_id, {
-    skip: !formData.province_id,
-  });
-
-  const { data: districts } = useGetDistrictsQuery(formData.city_id, {
-    skip: !formData.city_id,
-  });
-
-  const { data: villages } = useGetVillagesQuery(formData.district_id, {
-    skip: !formData.district_id,
-  });
+  const [
+    getCities,
+    {
+      data: cities,
+      isLoading: cLoading,
+      isSuccess: cSuccess,
+      error: cError,
+      reset: cReset,
+    },
+  ] = useGetCitiesMutation();
 
   const [addAddress, { data, isSuccess, isLoading, error, reset }] =
     useAddAddressMutation();
   const [loadUser] = useLoadUserMutation();
 
-  const handleChange = (e, list, idKey, nameKey) => {
-    const { name, value } = e.target;
-    const selectedItem = list?.find((item) => item[idKey] == value);
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      [name.replace("_id", "")]: selectedItem ? selectedItem[nameKey] : "",
-    }));
+  const getCitiesData = () => {
+    getCities(city);
   };
 
   const submitHandler = (e) => {
@@ -62,117 +58,133 @@ const Address = ({ user }) => {
     if (user) {
       setFormData({
         id: user.address?.id || "",
-        province_id: user.address?.province_id || "",
-        province: user.address?.province || "",
-        city_id: user.address?.city_id || "",
-        city: user.address?.city || "",
-        district_id: user.address?.district_id || "",
-        district: user.address?.district || "",
-        village_id: user.address?.village_id || "",
-        village: user.address?.village || "",
+        data_id: user.address?.data_id || "",
+        label: user.address?.label || "",
+        province_name: user.address?.province_name || "",
+        city_name: user.address?.city_name || "",
+        district_name: user.address?.district_name || "",
+        subdistrict_name: user.address?.subdistrict_name || "",
+        zip_code: user.address?.zip_code || "",
         detail: user.address?.detail || "",
       });
     }
   }, [user]);
 
   useEffect(() => {
-  if (isSuccess) {
-    toast.success(data.message);
-    reset();
+    if (selectedCity) {
+      setFormData({
+        id: user.address?.id || "",
+        data_id: selectedCity?.id,
+        label: selectedCity?.label,
+        province_name: selectedCity?.province_name,
+        city_name: selectedCity?.city_name,
+        district_name: selectedCity?.district_name,
+        subdistrict_name: selectedCity?.subdistrict_name,
+        zip_code: selectedCity?.zip_code,
+        detail: user.address?.detail || "",
+      });
+    }
+  }, [selectedCity]);
 
-    setFormData({
-      id: "",
-      province_id: "",
-      province: "",
-      city_id: "",
-      city: "",
-      district_id: "",
-      district: "",
-      village_id: "",
-      village: "",
-      detail: "",
-    });
+  useEffect(() => {
+    if (cSuccess) {
+      setResult(cities);
+    }
 
-    loadUser();
-  }
+    if (cError) {
+      toast.error(cError.data.message);
+      cReset();
+    }
+  }, [cSuccess, cError]);
 
-  if (error) {
-    toast.error(error.data.message);
-    reset();
-  }
-}, [isSuccess, data, error]);
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success(data.message);
+      reset();
+
+      setFormData({
+        id: "",
+        data_id: "",
+        label: "",
+        province_name: "",
+        city_name: "",
+        district_name: "",
+        subdistrict_name: "",
+        zip_code: "",
+        detail: "",
+      });
+      setSelectedCity(null);
+      loadUser();
+    }
+
+    if (error) {
+      toast.error(error.data.message);
+      reset();
+    }
+  }, [isSuccess, data, error]);
+
   return (
     <form className="d-flex flex-column gap-3" onSubmit={submitHandler}>
-      <select
-        name="province_id"
-        id="province"
-        className="form-select"
-        value={formData.province_id || ""}
-        onChange={(e) => handleChange(e, provinces, "id", "name")}
-      >
-        <option value="" hidden>
-          Provinsi
-        </option>
-        {provinces?.map((province, i) => (
-          <option key={i} value={province.id}>
-            {province.name}
+      <div className="d-flex gap-2">
+        <input
+          type="text"
+          name="city"
+          id="city"
+          className="form-control"
+          placeholder="Masukan kota tempat kamu tinggal"
+          value={city || ""}
+          onChange={(e) => setCity(e.target.value)}
+        />
+
+        <button
+          type="button"
+          className="btn btn-success"
+          disabled={cLoading}
+          onClick={getCitiesData}
+        >
+          {cLoading ? "Mencari..." : "Cari"}
+        </button>
+      </div>
+
+      {result.length > 0 && (
+        <input
+          type="text"
+          name="search"
+          id="search"
+          placeholder="Masukan Kecamatan"
+          className="form-control"
+          value={search || ""}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      )}
+
+      {filteredResult.length > 0 && (
+        <select
+          className="form-select"
+          onChange={(e) => {
+            const selected = result?.find((item) => item.id == e.target.value);
+            setSelectedCity(selected);
+          }}
+        >
+          <option value="" hidden>
+            Pilih Alamat
           </option>
-        ))}
-      </select>
+          {filteredResult?.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      )}
 
-      <select
-        name="city_id"
-        id="city"
-        className="form-select"
-        value={formData.city_id || ""}
-        onChange={(e) => handleChange(e, cities, "id", "name")}
-      >
-        <option value="" hidden>
-          Kota / Kabupaten
-        </option>
-
-        {cities?.map((city, i) => (
-          <option key={i} value={city.id}>
-            {city.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        name="district_id"
-        id="district"
-        className="form-select"
-        value={formData.district_id || ""}
-        onChange={(e) => handleChange(e, districts, "id", "name")}
-      >
-        <option value="" hidden>
-          Kecamatan
-        </option>
-
-        {districts?.map((district, i) => (
-          <option key={i} value={district.id}>
-            {district.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        name="village_id"
-        id="village"
-        className="form-select"
-        value={formData.village_id || ""}
-        onChange={(e) => handleChange(e, villages, "id", "name")}
-      >
-        <option value="" hidden>
-          Desa
-        </option>
-
-        {villages?.map((village, i) => (
-          <option key={i} value={village.id}>
-            {village.name}
-          </option>
-        ))}
-      </select>
+      <input
+        type="text"
+        name="detail"
+        id="detail"
+        value={formData.label}
+        className="form-control"
+        readOnly
+      />
 
       <textarea
         name="address"

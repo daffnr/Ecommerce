@@ -36,9 +36,26 @@ router.post("/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const data = await client.query(`SELECT * FROM users WHERE email = $1`, [
-      email,
-    ]);
+    const data = await client.query(
+      `SELECT users.id, users.level, users.name, users.email, users.phone, users.password,
+      CASE WHEN address.id IS NOT NULL THEN
+        json_build_object(
+          'id', address.id,
+          'data_id', address.data_id,
+          'label', address.label,
+          'province_name', address.province_name,
+          'city_name', address.city_name,
+          'district_name', address.district_name,
+          'subdistrict_name', address.subdistrict_name,
+          'zip_code', address.zip_code,
+          'detail', address.detail
+        )
+      ELSE NULL END AS address
+      FROM users
+      LEFT JOIN address ON users.id = address.user_id 
+      WHERE users.email = $1`,
+      [email]
+    );
 
     if (data.rowCount === 0) {
       return res.status(404).json({ message: "Email tidak ditemukan" });
@@ -66,7 +83,11 @@ router.post("/signin", async (req, res) => {
         secure: process.env.ENV == "production",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      res.status(200).json({ message: "Berhasil Login", user });
+
+      const userResponse = { ...user };
+      delete userResponse.password;
+
+      res.status(200).json({ message: "Berhasil Login", user: userResponse });
     });
   } catch (error) {
     console.log(error);
@@ -106,21 +127,22 @@ router.get("/get-user", authorize("admin"), async (req, res) => {
 router.get("/load-user", authorize("user", "admin"), async (req, res) => {
   try {
     const data = await client.query(
-      `SELECT users.id, users.level, users.name, users.email, users.phone, users.id,
-      json_build_object(
-      'id', address.id,
-      'province_id', address.province_id,
-      'province', address.province,
-      'city_id', address.city_id,
-      'city', address.city,
-      'district_id', address.district_id,
-      'district', address.district,
-      'village_id', address.village_id,
-      'village', address.village,
-      'detail', address.detail
-      ) AS address
+      `SELECT users.id, users.level, users.name, users.email, users.phone,
+      CASE WHEN address.id IS NOT NULL THEN
+        json_build_object(
+          'id', address.id,
+          'data_id', address.data_id,
+          'label', address.label,
+          'province_name', address.province_name,
+          'city_name', address.city_name,
+          'district_name', address.district_name,
+          'subdistrict_name', address.subdistrict_name,
+          'zip_code', address.zip_code,
+          'detail', address.detail
+        )
+      ELSE NULL END AS address
       FROM users
-      LEFT join address ON users.id = address.user_id 
+      LEFT JOIN address ON users.id = address.user_id 
       WHERE users.id = $1`,
       [req.user.id],
     );

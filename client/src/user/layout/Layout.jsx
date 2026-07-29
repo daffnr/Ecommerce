@@ -1,21 +1,35 @@
 import { Menus } from "./Menus";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useNavigate, Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import Protected from "../../components/auth/Protected";
+import { useLogoutMutation } from "../../api/request/ApiAuth";
+import { setLogout } from "../../api/slice/AuthSlice";
 
 // eslint-disable-next-line react/prop-types
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const {user} = useSelector(state => state.auth)
+  const dispatch = useDispatch();
+  const [logout] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      dispatch(setLogout());
+      navigate("/signin");
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="min-vh-100 bg-light">
       <Protected roles={["user"]} />
       <div className="container-fluid bg-info">
         <header className="navbar navbar-dark sticky-top flex-md-nowrap p-2">
-          <a className="navbar-brand col-md-3 col-lg-2 me-0 px-5" href="#">
+          <Link className="navbar-brand col-md-3 col-lg-2 me-0 px-5" to="/">
             {user?.name}
-          </a>
+          </Link>
           <button
             className="position-absolute  d-md-none collapsed btn btn-light"
             type="button"
@@ -30,7 +44,7 @@ const Layout = ({ children }) => {
 
           <div className="navbar-nav">
             <div className="nav-item text-nowrap">
-              <button className="btn btn-danger">
+              <button className="btn btn-danger" onClick={handleLogout}>
                 <i className="bi bi-box-arrow-left"></i>
               </button>
             </div>

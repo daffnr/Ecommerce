@@ -29,7 +29,7 @@ const AuthSlice = createSlice({
       .addMatcher(
         ApiAuth.endpoints.signin.matchFulfilled,
         (state, { payload }) => {
-          (state.user = payload),
+          (state.user = payload.user),
             (state.isSignin = true),
             (state.isLoading = false);
         },
@@ -41,7 +41,10 @@ const AuthSlice = createSlice({
             state.user= payload;
             state.isSignin= true;
         }
-      )
+      ).addMatcher(ApiAuth.endpoints.loadUser.matchRejected, (state) => {
+        state.user = {};
+        state.isSignin = false;
+      })
   },
 });
 

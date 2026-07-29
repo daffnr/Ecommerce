@@ -1,3 +1,27 @@
 .pointer {
   cursor: pointer;
 }
+
+.react-quill {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.react-quill .ql-container {
+  flex: 1 !important;
+  overflow-y: auto !important;
+}
+
+.ql-editor {
+  border: none !important;
+  z-index: 200 !important;
+}
+
+.ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+.ql-container.ql-snow {
+  border: none !important;
+}

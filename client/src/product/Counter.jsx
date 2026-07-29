@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 const Counter = ({ product }) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [price, setPrice] = useState(0);
+
+  const { isSignin, user } = useSelector((state) => state.auth);
 
   const increaseQuantity = () => {
     if (quantity < product.stock) {
@@ -19,6 +23,13 @@ const Counter = ({ product }) => {
   };
 
   const handleBuy = () => {
+    if (!isSignin) {
+      return toast.info("Silahkan Login Terlebih Dahulu!");
+    }
+
+    if (!user?.address?.id) {
+      return toast.info("Silahkan Lengkapi Alamat Terlebih Dahulu!");
+    }
     const checkoutProduct = [
       {
         id: product.id,
@@ -42,8 +53,10 @@ const Counter = ({ product }) => {
   }, [quantity]);
 
   useEffect(() => {
-    if(product){setPrice(product.price)}
-  }, [product])
+    if (product) {
+      setPrice(product.price);
+    }
+  }, [product]);
 
   return (
     <div className="rounded p-2 bg-white border border-2 shadow w-100 d-flex flex-column gap-2">
@@ -70,7 +83,7 @@ const Counter = ({ product }) => {
       <div className="d-flex align-items-center justify-content-between">
         <p className="m-0 fw-bold text-muted">Subtotal</p>
         <p className="m-0 fw-bold">{`Rp ${parseFloat(price).toLocaleString(
-          "id-ID"
+          "id-ID",
         )}`}</p>
       </div>
 

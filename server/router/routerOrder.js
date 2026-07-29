@@ -14,7 +14,7 @@ const config = {
 
 router.post("/create-order", authorize("user"), async (req, res) => {
   try {
-    const { products, gross_amount } = req.body;
+    const { products, gross_amount, shipping } = req.body;
 
     const user = req.user;
 
@@ -41,7 +41,7 @@ router.post("/create-order", authorize("user"), async (req, res) => {
           product.id,
           product.quantity,
           product.price,
-          product.shipping,
+          shipping,
         ]
       );
     }

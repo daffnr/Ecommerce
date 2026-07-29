@@ -7,27 +7,9 @@ export const ApiAddress = createApi({
     credentials: "include",
   }),
   endpoints: (builder) => ({
-    getProvinces: builder.query({
-      query: () => ({
-        url: "/get-provinces",
-        method: "GET",
-      }),
-    }),
-    getCities: builder.query({
-      query: (provinceId) => ({
-        url: `/get-cities/${provinceId}`,
-        method: "GET",
-      }),
-    }),
-    getDistricts: builder.query({
-      query: (cityId) => ({
-        url: `/get-district/${cityId}`,
-        method: "GET",
-      }),
-    }),
-    getVillages: builder.query({
-      query: (districtId) => ({
-        url: `/get-villages/${districtId}`,
+    getCities: builder.mutation({
+      query: (city) => ({
+        url: `/get-cities/${city}`,
         method: "GET",
       }),
     }),
@@ -35,16 +17,26 @@ export const ApiAddress = createApi({
       query: (body) => ({
         url: "/add",
         method: "POST",
-        body
-      })
-    })
+        body,
+      }),
+    }),
+    getShippingCost: builder.mutation({
+      query: ({ courier, origin, destination, weight }) => ({
+        url: "/cost",
+        method: "GET",
+        params: {
+          courier,
+          origin,
+          destination,
+          weight,
+        },
+      }),
+    }),
   }),
 });
 
 export const {
-  useGetProvincesQuery,
-  useGetCitiesQuery,
-  useGetDistrictsQuery,
-  useGetVillagesQuery,
+  useGetCitiesMutation,
   useAddAddressMutation,
+  useGetShippingCostMutation,
 } = ApiAddress;

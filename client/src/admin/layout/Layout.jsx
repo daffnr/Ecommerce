@@ -1,9 +1,24 @@
 import React from "react";
 import { Menus } from "./Menus";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useLogoutMutation } from "../../api/request/ApiAuth";
+import { setLogout } from "../../api/slice/AuthSlice";
 
 const Layout = ({ children, pageName }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [logout] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      dispatch(setLogout());
+      navigate("/signin");
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="min-vh-100 bg-light">
@@ -26,7 +41,7 @@ const Layout = ({ children, pageName }) => {
 
           <div className="navbar-nav">
             <div className="nav-item text-nowrap">
-              <button className="btn btn-danger">
+              <button className="btn btn-danger" onClick={handleLogout}>
                 <i className="bi bi-box-arrow-left"></i>
               </button>
             </div>

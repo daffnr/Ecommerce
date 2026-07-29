@@ -7,7 +7,7 @@ export const authorize = (... levels) => {
         const {token} = req.cookies
 
         if(!token){
-            return null;
+            return res.status(401).json({ message: "Silahkan login terlebih dahulu" });
         }
 
         try {

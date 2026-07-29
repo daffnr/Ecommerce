@@ -30,7 +30,7 @@ const AdminCat = () => {
   const addHandler = () => {
     const formData = new FormData();
     formData.append("id", detail.id ? detail.id : "");
-    formData.append("name", name ? name : detail.name);
+    formData.append("name", name);
     formData.append("image", image);
 
     addCategory(formData);
@@ -52,17 +52,25 @@ const AdminCat = () => {
 
   const closeHandler = () => {
     setName("");
+    setImage(null);
+    setDetail({});
+    if (fileInput.current) {
+      fileInput.current.value = "";
+    }
   };
+
+  useEffect(() => {
+    if (detail && detail.id) {
+      setName(detail.name || "");
+    } else {
+      setName("");
+    }
+  }, [detail]);
 
   useEffect(() => {
     if (isSuccess) {
       toast.success(data.message);
-      setName("");
-      setImage(null);
-      setDetail({});
-      if (fileInput.current) {
-        fileInput.current.value = "";
-      }
+      closeHandler();
       reset();
     }
 
@@ -158,7 +166,7 @@ const AdminCat = () => {
                 id="category_name"
                 placeholder="Nama Category"
                 className="form-control"
-                value={name ? name : detail.name || ""}
+                value={name}
                 onChange={(e) => setName(e.target.value)}
               />
 
